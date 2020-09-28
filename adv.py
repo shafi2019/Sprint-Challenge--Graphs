@@ -23,6 +23,53 @@ world.load_graph(room_graph)
 # Print an ASCII map
 world.print_rooms()
 
+
+def travelers_path(direction):
+    # save our route back to unvisited exits
+    if direction == 'n':
+        return 's'
+    elif direction == 's':
+        return 'n'
+    elif direction == 'e':
+        return 'w'
+    elif direction == 'w':
+        return 'e'
+
+
+def maze_traversal(current_room, visited=None):
+    # list for directions while moving rooms
+    directions = []
+    # if visited is none (1st loop) create a set to hold all visited nodes
+    if visited == None:
+        visited = set()
+
+    # Find all exits for current room
+    for move in player.current_room.get_exits():
+        # Move in selected direction
+        # print(move)
+        player.travel(move)
+
+        # If room is in visited, travelers_path to find an unvisited path
+        if player.current_room in visited:
+            player.travel(travelers_path(move))
+            # print(travelers_path(move))
+        # if we haven't visited this room:
+        else:
+            # Add to visited
+            visited.add(player.current_room)
+            # append the move to the directions list
+            directions.append(move)
+            # recursive call and repeat the above loop and add directions to path
+            directions = directions + \
+                maze_traversal(player.current_room, visited)
+            # Move to previouss room
+            player.travel(travelers_path(move))
+            # add travelers_path to the directions list
+            directions.append(travelers_path(move))
+
+    return directions
+
+
 player = Player(world.starting_room)
 
 # Fill this out with directions to walk
