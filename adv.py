@@ -23,7 +23,27 @@ world.load_graph(room_graph)
 # Print an ASCII map
 world.print_rooms()
 
+player = Player(world.starting_room)
 
+# Fill this out with directions to walk
+# traversal_path = ['n', 'n']
+traversal_path = []
+
+class Stack():
+    def __init__(self):
+        self.stack = []
+    def push(self, value):
+        self.stack.append(value)
+    def pop(self):
+        if self.size() > 0:
+            return self.stack.pop()
+        else:
+            return None
+    
+    def size(self):
+        return len(self.stack)
+
+        
 def travelers_path(direction):
     # save our route back to unvisited exits
     if direction == 'n':
@@ -34,47 +54,54 @@ def travelers_path(direction):
         return 'w'
     elif direction == 'w':
         return 'e'
+    elif direction == None:
+        return None
+
+graph = {}
 
 
-def maze_traversal(current_room, visited=None):
-    # list for directions while moving rooms
-    directions = []
-    # if visited is none (1st loop) create a set to hold all visited nodes
-    if visited == None:
-        visited = set()
+def explore(came_from=None):
+    to_visit = Stack()
 
-    # Find all exits for current room
-    for move in player.current_room.get_exits():
-        # Move in selected direction
-        # print(move)
-        player.travel(move)
+    if player.current_room.id not in graph:
+        graph[player.current_room.id] = {}
 
-        # If room is in visited, travelers_path to find an unvisited path
-        if player.current_room in visited:
-            player.travel(travelers_path(move))
-            # print(travelers_path(move))
-        # if we haven't visited this room:
-        else:
-            # Add to visited
-            visited.add(player.current_room)
-            # append the move to the directions list
-            directions.append(move)
-            # recursive call and repeat the above loop and add directions to path
-            directions = directions + \
-                maze_traversal(player.current_room, visited)
-            # Move to previouss room
-            player.travel(travelers_path(move))
-            # add travelers_path to the directions list
-            directions.append(travelers_path(move))
+    if came_from is not None:
+        graph[player.current_room.id][travelers_path(
+            came_from)] = player.current_room.get_room_in_direction(travelers_path(came_from)).id
 
-    return directions
+    for direction in player.current_room.get_exits():
+        if direction not in graph[player.current_room.id]:
+            graph[player.current_room.id][direction] = '?'
+
+    for direction in player.current_room.get_exits():
+        adj_room = player.current_room.get_room_in_direction(direction).id
+
+        if adj_room not in graph or graph[player.current_room.id][direction] == '?':
+            to_visit.push(direction)
+
+    while to_visit.size() > 0:
+
+        go_to = to_visit.pop()
+
+        if player.current_room.get_room_in_direction(go_to).id not in graph:
+            traversal_path.append(go_to)
+            graph[player.current_room.id][go_to] = player.current_room.get_room_in_direction(
+                go_to).id
+            player.travel(go_to)
+            explore(go_to)
+
+            if len(graph) == len(world.rooms):
+                return
+
+            traversal_path.append(travelers_path(go_to))
+            player.travel(travelers_path(go_to))
 
 
-player = Player(world.starting_room)
+print(explore())
 
-# Fill this out with directions to walk
-# traversal_path = ['n', 'n']
-traversal_path = []
+
+
 
 
 
@@ -98,12 +125,12 @@ else:
 #######
 # UNCOMMENT TO WALK AROUND
 #######
-player.current_room.print_room_description(player)
-while True:
-    cmds = input("-> ").lower().split(" ")
-    if cmds[0] in ["n", "s", "e", "w"]:
-        player.travel(cmds[0], True)
-    elif cmds[0] == "q":
-        break
-    else:
-        print("I did not understand that command.")
+# player.current_room.print_room_description(player)
+# while True:
+#     cmds = input("-> ").lower().split(" ")
+#     if cmds[0] in ["n", "s", "e", "w"]:
+#         player.travel(cmds[0], True)
+#     elif cmds[0] == "q":
+#         break
+#     else:
+#         print("I did not understand that command.")
